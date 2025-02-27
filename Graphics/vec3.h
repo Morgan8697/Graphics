@@ -44,6 +44,14 @@ public:
 	double length_squared() const {
 		return e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
 	}
+
+	static vec3 random() {
+		return vec3(random_double(), random_double(), random_double());
+	}
+
+	static vec3 random(interval range) {
+		return vec3(random_double(range.min, range.max), random_double(range.min, range.max), random_double(range.min, range.max));
+	}
 };
 
 using point3 = vec3;
@@ -89,6 +97,26 @@ inline vec3 cross(const vec3& u, const vec3& v) {
 
 inline vec3 unit_vector(const vec3& v) {
 	return v / v.length();
+}
+
+inline vec3 random_unit_vector() {
+	while (true) {
+		point3 p = vec3::random(interval(-1, 1));
+		double len_sqr = p.length_squared();
+
+		// Due to floating precision, a really small value can underflow to zero when squared, we need to ban this location really close to the center.
+		if (1e-160 < len_sqr && len_sqr <= 1)
+			return p / sqrt(len_sqr);
+	}
+}
+
+// WARNING: This implementation is simple but costly in the performance see Von Mises Distribution for potential improvement.
+inline vec3 random_on_hemisphere(const vec3& normal) {
+	vec3 on_unit_sphere = random_unit_vector();
+	if (dot(on_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
+		return on_unit_sphere;
+	else
+		return -on_unit_sphere;
 }
 #endif // !
 
