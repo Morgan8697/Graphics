@@ -4,6 +4,10 @@
 #include "hittable.h"
 #include "material.h"
 #include "rtweekend.h" // Need to remove after implementation
+#include <mutex>
+#include <vector>
+#include <thread>
+#include <iostream>
 
 class camera {
 public:
@@ -23,25 +27,49 @@ public:
     double focus_dist    = 10;// How far away is the focus plane from lookfrom 
 
     void render(const hittable& world) {
-        static bool breakit = false;
         initialize();
 
-        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+        int num_threads = std::thread::hardware_concurrency(); // Get available CPU threads
+        int rows_per_thread = std::max(1, image_height / num_threads);
 
-        for (int j = 0; j < image_height; j++) {
-            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+
+        std::vector<std::thread> threads;
+
+        for (int t = 0; t < num_threads; t++) {
+            int start_y = t * rows_per_thread;
+            int end_y = (t == num_threads - 1) ? image_height : (t + 1) * rows_per_thread;
+
+            std::clog << "Dispatching " << start_y << " to " << end_y << " lines to a thread\n";
+            threads.emplace_back([this, &world, start_y, end_y]() {
+                this->render_section(world, start_y, end_y);
+            });
+
+        }
+
+        for (auto& thread : threads) {
+            thread.join();
+        }
+
+        std::clog << "\rDone.                 \n";
+    }
+
+    void render_section(const hittable& world, int start_y, int end_y) {
+        for (int j = start_y; j < end_y; j++) {
             for (int i = 0; i < image_width; i++) {
                 color pixel_color(0, 0, 0);
                 for (int sample = 0; sample < samples_per_pixel; sample++) {
                     ray r = get_ray(i, j);
                     pixel_color += ray_color(r, max_depth, world);
                 }
-                write_color(std::cout, pixel_samples_scale * pixel_color);
-            }
-        }
 
-        std::clog << "\rDone.                 \n";
+                std::lock_guard<std::mutex> lock(image_mutex);
+                write_color(std::cout, pixel_samples_scale * pixel_color);
+                //std::clog << "Thread wrote pixel - x: " << i << " y: " << j << "\n";
+            }
+            std::clog << "Thread wrote line " << j << "\n";
+        }
     }
+
 private:
     int    image_height;        // Rendered image height
     double pixel_samples_scale; // Color scale factor for a sum of pixel samples TOCOMMENT
@@ -52,6 +80,8 @@ private:
     vec3   u, v, w;             // Camera frame basis vectors (allows us to have a orthogonal reference)
     vec3   defocus_disk_u;      // Defocus disk horizontal radius
     vec3   defocus_disk_v;      // Defocus disk vertical radius
+
+    std::mutex image_mutex;
 
 	void initialize() {
         image_height = int(image_width / aspect_ratio);

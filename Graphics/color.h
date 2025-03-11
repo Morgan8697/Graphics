@@ -29,8 +29,6 @@ void write_color(std::ostream& out, const color& pixel_color) {
 	int rbyte = (255.999 * intensity.clamp(r));
 	int gbyte = (255.999 * intensity.clamp(g));
 	int bbyte = (255.999 * intensity.clamp(b));
-
-	out << rbyte << ' ' << gbyte << ' ' << bbyte << '\n';
 }
 
 #endif
