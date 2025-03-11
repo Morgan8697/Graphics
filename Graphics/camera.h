@@ -29,19 +29,22 @@ public:
     void render(const hittable& world) {
         initialize();
 
+        std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
+
         int num_threads = std::thread::hardware_concurrency(); // Get available CPU threads
         int rows_per_thread = std::max(1, image_height / num_threads);
 
 
         std::vector<std::thread> threads;
+        std::vector<color> pixel_data(image_width * image_height);
 
         for (int t = 0; t < num_threads; t++) {
             int start_y = t * rows_per_thread;
             int end_y = (t == num_threads - 1) ? image_height : (t + 1) * rows_per_thread;
 
             std::clog << "Dispatching " << start_y << " to " << end_y << " lines to a thread\n";
-            threads.emplace_back([this, &world, start_y, end_y]() {
-                this->render_section(world, start_y, end_y);
+            threads.emplace_back([this, &pixel_data, &world, start_y, end_y]() {
+                this->render_section(pixel_data, world, start_y, end_y);
             });
 
         }
@@ -50,10 +53,16 @@ public:
             thread.join();
         }
 
+        for (int j = 0; j < image_height; j++) {
+            for (int i = 0; i < image_width; i++) {
+                write_color(std::cout, pixel_data[j * image_width + i]);
+            }
+        }
+
         std::clog << "\rDone.                 \n";
     }
 
-    void render_section(const hittable& world, int start_y, int end_y) {
+    void render_section(std::vector<color>& pixel_data, const hittable& world, int start_y, int end_y) {
         for (int j = start_y; j < end_y; j++) {
             for (int i = 0; i < image_width; i++) {
                 color pixel_color(0, 0, 0);
@@ -62,17 +71,15 @@ public:
                     pixel_color += ray_color(r, max_depth, world);
                 }
 
-                std::lock_guard<std::mutex> lock(image_mutex);
-                write_color(std::cout, pixel_samples_scale * pixel_color);
-                //std::clog << "Thread wrote pixel - x: " << i << " y: " << j << "\n";
+                pixel_data[j * image_width + i] = pixel_samples_scale * pixel_color;
             }
-            std::clog << "Thread wrote line " << j << "\n";
+            std::clog << "Thread " << std::this_thread::get_id() <<  " wrote line " << j << "\n";
         }
     }
 
 private:
     int    image_height;        // Rendered image height
-    double pixel_samples_scale; // Color scale factor for a sum of pixel samples TOCOMMENT
+    double pixel_samples_scale; // Color scale factor for a sum of pixel samples
     point3 center;              // Camera center
     point3 pixel00_loc;         // Location of pixel 0,0
     vec3   pixel_delta_u;       // Offset to pixel to the right
@@ -81,7 +88,7 @@ private:
     vec3   defocus_disk_u;      // Defocus disk horizontal radius
     vec3   defocus_disk_v;      // Defocus disk vertical radius
 
-    std::mutex image_mutex;
+    std::vector<color> pixel_data;
 
 	void initialize() {
         image_height = int(image_width / aspect_ratio);
@@ -129,8 +136,9 @@ private:
 
         point3 ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
         vec3 ray_direction = pixel_sample - ray_origin;
+        double ray_time = random_double();
 
-        return ray(ray_origin, ray_direction);
+        return ray(ray_origin, ray_direction, ray_time);
     }
 
     vec3 sample_square() const {
