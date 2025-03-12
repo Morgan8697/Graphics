@@ -3,11 +3,9 @@
 
 #include "hittable.h"
 #include "material.h"
-#include "rtweekend.h" // Need to remove after implementation
-#include <mutex>
+
 #include <vector>
 #include <thread>
-#include <iostream>
 
 class camera {
 public:
@@ -42,10 +40,10 @@ public:
             int start_y = t * rows_per_thread;
             int end_y = (t == num_threads - 1) ? image_height : (t + 1) * rows_per_thread;
 
-            std::clog << "Dispatching " << start_y << " to " << end_y << " lines to a thread\n";
             threads.emplace_back([this, &pixel_data, &world, start_y, end_y]() {
                 this->render_section(pixel_data, world, start_y, end_y);
             });
+            std::clog << "Dispatching " << start_y << " to " << end_y << " lines to thread #" << threads[t].get_id() << "\n";
 
         }
 
@@ -87,8 +85,6 @@ private:
     vec3   u, v, w;             // Camera frame basis vectors (allows us to have a orthogonal reference)
     vec3   defocus_disk_u;      // Defocus disk horizontal radius
     vec3   defocus_disk_v;      // Defocus disk vertical radius
-
-    std::vector<color> pixel_data;
 
 	void initialize() {
         image_height = int(image_width / aspect_ratio);
