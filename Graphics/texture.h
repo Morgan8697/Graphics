@@ -2,6 +2,7 @@
 #define TEXTURE_H
 
 #include "helper.h"
+#include "rtw_stb_image.h"
 
 class texture {
 public:
@@ -46,5 +47,27 @@ private:
     double inv_scale;
     shared_ptr<texture> even;
     shared_ptr<texture> odd;
+};
+
+class image_texture : public texture {
+public:
+    image_texture(const char* filename) : image(filename) {}
+
+    color value(double u, double v, const point3& p) const override {
+        if (image.height() <= 0) return color(0, 1, 1); // Fail safe for when imagew failed to load
+
+        const interval uv_range = interval(0,1);
+        u = uv_range.clamp(u);
+        v = 1.0 - uv_range.clamp(v);
+
+        int i = int(u * image.width());
+        int j = int(v * image.height());
+        auto pixel = image.pixel_data(i, j);
+
+        double color_scale = 1.0 / 255.0;
+        return color(color_scale * pixel[0], color_scale * pixel[1], color_scale * pixel[2]);
+    }
+private:
+    rtw_image image;
 };
 #endif
