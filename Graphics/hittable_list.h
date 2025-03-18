@@ -6,6 +6,38 @@
 
 #include <vector>
 
+/*
+ * Hittable List
+ * -------------
+ * Represents a collection of hittable objects, treated as a single composite object.
+ * Used to manage and perform ray intersection tests across multiple scene objects.
+ *
+ * Purpose:
+ * --------
+ * - Groups multiple hittable objects for organized ray intersection handling.
+ * - Computes the bounding box for the entire collection to accelerate ray tracing.
+ *
+ * Functionality:
+ * --------------
+ * - `add(hittable)`: Adds an object and updates the bounding box.
+ * - `clear()`: Removes all objects from the list.
+ * - `hit(ray, t_range, rec)`: Iterates through objects, records closest intersection.
+ * - `bounding_box()`: Returns the bounding box enclosing all objects in the list.
+ *
+ * Performance:
+ * ------------
+ * - Performs linear search over objects for ray hits.
+ * - Used as a base for more optimized structures like BVH.
+ *
+ * Usage:
+ * ------
+ * hittable_list scene;
+ * scene.add(make_shared<sphere>(...));
+ * if (scene.hit(ray, t_range, hit_rec)) {
+ *     // Process intersection
+ * }
+ */
+
 class hittable_list : public hittable {
 public:
 	std::vector<shared_ptr<hittable>> hittables;

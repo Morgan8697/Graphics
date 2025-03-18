@@ -3,6 +3,36 @@
 
 #include "aabb.h"
 
+/*
+ * Hittable Interface and Hit Record
+ * ---------------------------------
+ * Defines an interface for objects that can be intersected by rays, and a data structure to
+ * store information about ray-object intersections.
+ *
+ * Purpose:
+ * --------
+ * - `hittable`: Abstract base class for any object that can be hit by a ray.
+ * - `hit_record`: Stores intersection details such as position, normal, material, and texture coordinates.
+ *
+ * Hit Record:
+ * -----------
+ * - Stores hit point, surface normal, texture coordinates (u, v), and ray parameter `t`.
+ * - Tracks whether the ray hit the front or back face of the surface.
+ * - Automatically adjusts normal direction to oppose incoming ray using `set_face_normal()`.
+ *
+ * Hittable Interface:
+ * -------------------
+ * - `hit(ray, t_range, rec)`: Determines if ray hits object within `t_range`, fills `rec`.
+ * - `bounding_box()`: Returns an axis-aligned bounding box (AABB) for the object.
+ *
+ * Usage:
+ * ------
+ * class sphere : public hittable {
+ *     bool hit(const ray& r, interval t_range, hit_record& rec) const override;
+ *     aabb bounding_box() const override;
+ * };
+ */
+
 class material;
 
 struct hit_record {

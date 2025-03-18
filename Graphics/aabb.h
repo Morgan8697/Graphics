@@ -3,6 +3,29 @@
 
 #include "helper.h"
 
+/*
+ * Axis-Aligned Bounding Box (AABB)
+ * --------------------------------
+ * Represents a rectangular 3D volume aligned to the X, Y, Z axes.
+ * Used for efficient spatial queries (e.g., ray intersection tests)
+ *
+ * Key Features:
+ * - Construct from intervals or two 3D points (auto-ordering min/max).
+ * - Merge two AABBs to get a bounding box that encloses both.
+ * - Fast AABB-ray intersection using the slab method (returns true if intersected).
+ * - Identify the longest axis to optimize bounding volume hierarchies (BVH).
+ * - Provides static constants for an empty box and a universal bounding box.
+ *
+ * Usage Example:
+ * ---------------
+ * aabb box(p1, p2);               // Create AABB from two points
+ * if (box.hit(ray, t_range)) {    // Fast intersection test
+ *     // Ray intersects the box
+ * }
+ * int axis = box.longest_axis();  // For BVH splitting
+ */
+
+
 class aabb {
 public:
 	interval x, y, z;

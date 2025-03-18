@@ -4,6 +4,41 @@
 #include "interval.h"
 #include "vec3.h"
 
+/*
+ * Color Utilities for Ray Tracing
+ * -------------------------------
+ * Provides functions to handle color conversion and output for ray-traced images.
+ * Colors are represented as vec3, with components in the [0, 1] range.
+ *
+ * Purpose:
+ * --------
+ * - Convert linear color values to gamma-corrected values for proper brightness display.
+ * - Clamp color values to valid displayable range.
+ * - Output pixel color in PPM format for image rendering.
+ *
+ * Gamma Correction:
+ * -----------------
+ * - Human eyes perceive light non-linearly; gamma correction accounts for this.
+ * - Converts linear color values to gamma 2.0 space using sqrt(linear_value).
+ * - Ensures images look natural on standard displays.
+ *
+ * Functionality:
+ * --------------
+ * - `linear_to_gamma(double)`: Applies gamma correction to one color component.
+ * - `write_color(ostream, color)`: Converts a color to 8-bit format and writes it to an output stream.
+ *
+ * Usage:
+ * ------
+ * color pixel_color(0.5, 0.7, 1.0);
+ * write_color(std::cout, pixel_color);
+ *
+ * Notes:
+ * ------
+ * - Clamps color values to [0, 0.999] before converting to 8-bit.
+ * - Assumes final output is in the plain PPM (P3) image format.
+ */
+
+
 using color = vec3;
 
 inline double linear_to_gamma(double linear_component)
