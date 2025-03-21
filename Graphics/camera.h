@@ -13,7 +13,7 @@ public:
     int         image_width          = 100;  // Rendered image width in pixel count
     int         samples_per_pixel    = 10;   // Count of random samples for each pixel, performance heavy
     uint16_t    max_depth            = 10;   // Maximum number of ray bounces into scenes
-
+    color background;                        // Scene background color
 
     double vfov     = 90;               // Vertical fov
     point3 lookfrom = point3(0, 0, 0);	// Camera position
@@ -154,13 +154,21 @@ private:
             return color(0, 0, 0);
 
 		hit_record rec;
-		if (world.hit(r, interval(0.001, infinity), rec)) {
-            ray scattered;
-            color attenuation;
-            if (rec.mat->scatter(r, rec, attenuation, scattered))
-                return attenuation * ray_color(scattered, depth - 1, world);
-            return color(0, 0, 0);
-		}
+
+        // If the ray hits nothing, return the background color
+        if (!world.hit(r, interval(0.001, infinity), rec))
+            return background;
+
+        ray scattered;
+        color attenuation;
+        color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
+
+        if (!rec.mat->scatter(r, rec, attenuation, scattered))
+            return color_from_emission;
+        
+        color color_from_scatter = attenuation * ray_color(scattered, depth - 1, world);
+        
+        return color_from_emission + color_from_scatter;
 
 		vec3 unit_direction = unit_vector(r.direction());
 
